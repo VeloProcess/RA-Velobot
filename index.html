@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Consulta</title>
+    <link rel="icon" type="image/png" href="https://github.com/velobot05/Chatbot-Atendimento/blob/main/imagens/logo.png-removebg-preview%20(1).png?raw=true">
+    <style>
+        /* ================================================================== */
+        /* ### NOVAS CORES (TEMA RECLAME AQUI) - INÍCIO ### */
+        /* ================================================================== */
+        :root {
+            /* Tons de Verde (Principal) */
+            --cor-verde-principal: #009933;
+            --cor-verde-escuro: #007a29;
+            --cor-verde-claro: #e6f5ee;
+            --cor-balao-bot: #d9f0e6;
+
+            /* Tons de Azul (Detalhes) */
+            --cor-azul-detalhe: #0059a3;
+
+            /* Cores Neutras */
+            --cor-fundo: #f7f7f7;
+            --cor-container: #ffffff;
+            --cor-caixa-chat: #f0f5f2;
+            --cor-texto-principal: #333333;
+            --cor-borda: #dceddf;
+            --cor-sombra: rgba(0, 0, 0, 0.08);
+
+            /* Mapeamento para variáveis antigas para manter a compatibilidade */
+            --cor-azul-claro: var(--cor-verde-principal); /* Borda do Header do Painel */
+            --cor-azul-medio: var(--cor-azul-detalhe);   /* Cor de Interação (hover) */
+            --cor-azul-escuro: var(--cor-verde-principal); /* Título do Painel */
+        }
+
+        body.dark-theme {
+            /* Tons de Verde (Principal) */
+            --cor-verde-principal: #00b33c;
+            --cor-verde-escuro: #00cc44;
+            --cor-verde-claro: #2f3633;
+            --cor-balao-bot: #2a4035;
+
+            /* Tons de Azul (Detalhes) */
+            --cor-azul-detalhe: #3399ff;
+            
+            /* Cores Neutras */
+            --cor-fundo: #1a201d;
+            --cor-container: #242b28;
+            --cor-caixa-chat: #1f2622;
+            --cor-texto-principal: #e0e0e0;
+            --cor-borda: #3a4a42;
+            --cor-sombra: rgba(0, 0, 0, 0.2);
+        }
+        /* ================================================================== */
+        /* ### NOVAS CORES (TEMA RECLAME AQUI) - FIM ### */
+        /* ================================================================== */
+
+        body {
+            font-family: 'Arial', sans-serif; background: var(--cor-fundo); color: var(--cor-texto-principal);
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .app-wrapper {
+            display: grid; grid-template-columns: 300px 1fr 300px; width: 100%;
+            max-width: 1400px; height: 95vh; gap: 20px;
+        }
+        .panel {
+            background: var(--cor-container); border-radius: 12px;
+            box-shadow: 0 4px 20px var(--cor-sombra); padding: 24px;
+            display: flex; flex-direction: column; border: 1px solid var(--cor-borda);
+            overflow-y: auto; transition: background-color 0.3s, border-color 0.3s;
+        }
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid var(--cor-azul-claro); margin-bottom: 15px;
+        }
+        .panel h2 {
+            margin: 0; padding-bottom: 10px; font-size: 18px;
+            color: var(--cor-azul-escuro); border-bottom: none;
+        }
+        #theme-switcher {
+            font-size: 24px; cursor: pointer; background: transparent;
+            border: none; padding: 5px; color: var(--cor-texto-principal);
+        }
+        #quick-questions-list { list-style: none; padding: 0; margin: 0; }
+        #quick-questions-list li {
+            padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer;
+            transition: all 0.2s ease; font-size: 14px; border: 1px solid var(--cor-borda);
+        }
+        #quick-questions-list li:hover { background-color: var(--cor-azul-medio); color: white; }
+        .chat-container {
+            height: 100%; padding: 0; display: flex;
+            flex-direction: column; box-sizing: border-box;
+        }
+        .chat-box {
+            flex-grow: 1; overflow-y: auto; padding: 16px;
+            background-color: var(--cor-caixa-chat); border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .input-area {
+            display: flex; align-items: center; gap: 10px;
+            margin-top: 15px; padding: 0 24px;
+        }
+        #user-input {
+            flex-grow: 1; padding: 14px; border-radius: 24px;
+            border: 1px solid var(--cor-borda); background-color: var(--cor-container);
+            color: var(--cor-texto-principal); font-size: 16px; outline: none;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        #user-input:focus {
+            border-color: var(--cor-azul-medio);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-azul-medio) 20%, transparent);
+        }
+        .message {
+            position: relative; margin-bottom: 15px; padding: 12px 16px;
+            border-radius: 18px; max-width: 85%; word-wrap: break-word;
+        }
+        /* MUDANÇA AQUI: Balão do usuário agora usa a variável de azul */
+        .user-msg {
+            background: var(--cor-azul-medio);
+            color: #FFFFFF; margin-left: auto;
+        }
+        .bot-msg {
+            background: var(--cor-balao-bot); color: var(--cor-texto-principal);
+            margin-right: auto;
+        }
+        .bot-msg img { max-width: 100%; border-radius: 10px; margin-top: 10px; display: block; }
+        #quick-actions-container {
+            padding: 15px 0; border-top: 1px solid var(--cor-borda);
+            border-bottom: 1px solid var(--cor-borda); margin: 15px 0;
+        }
+        #quick-actions-container h3 { margin: 0 0 10px 0; font-size: 16px; }
+        .quick-actions-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        button.quick-action {
+            flex-grow: 1; background-color: #f8f9fa; border: 1px solid #dee2e6;
+            color: #333; border-radius: 8px; padding: 10px; text-align: left;
+            cursor: pointer; font-size: 14px; transition: all 0.2s ease;
+        }
+        button.quick-action:hover { background-color: #e9ecef; border-color: #adb5bd; }
+        .loader-container { display: flex; margin-bottom: 15px; }
+        .typing-bubble {
+            background: var(--cor-balao-bot); padding: 14px; border-radius: 18px;
+            display: flex; align-items: center;
+        }
+        .typing-dot {
+            width: 8px; height: 8px; margin: 0 2px; background-color: #888;
+            border-radius: 50%; animation: typing-animation 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing-animation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+        .copy-btn {
+            position: absolute; top: 5px; right: -35px; background: transparent;
+            border: none; cursor: pointer; font-size: 18px;
+            color: var(--cor-texto-principal); opacity: 0.3; transition: opacity 0.2s ease;
+        }
+        .bot-msg:hover .copy-btn { opacity: 1; }
+        .suggestion-buttons-container {
+            display: flex; flex-direction: column; align-items: flex-start;
+            gap: 8px; margin-top: 8px; margin-bottom: 10px; padding-left: 20px;
+        }
+        .suggestion-btn {
+            background-color: #ffffff; border: 1px solid var(--cor-azul-medio);
+            color: var(--cor-azul-medio); padding: 8px 12px; border-radius: 20px;
+            cursor: pointer; font-weight: bold; font-size: 14px;
+        }
+        .feedback-container {
+            display: flex; justify-content: flex-end; align-items: center;
+            gap: 8px; margin-top: 10px;
+        }
+        .feedback-btn {
+            background: transparent; border: none; font-size: 18px;
+            cursor: pointer; opacity: 0.6; transition: opacity 0.2s;
+        }
+        .feedback-btn:hover { opacity: 1; }
+        .feedback-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        #identificacao-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 50, 100, 0.85); display: flex; justify-content: center;
+            align-items: center; z-index: 1000; backdrop-filter: blur(5px);
+        }
+        #identificacao-overlay.hidden { display: none; }
+        #identificacao-box {
+            background: var(--cor-container); padding: 30px 40px; border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3); text-align: center;
+            width: 90%; max-width: 450px;
+        }
+        #alert-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 20, 40, 0.75); display: flex; justify-content: center;
+            align-items: center; z-index: 1000; backdrop-filter: blur(4px);
+        }
+        #alert-overlay.hidden { opacity: 0; pointer-events: none; }
+        #alert-box {
+            background: var(--cor-container); padding: 30px 40px; border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3); text-align: center;
+            width: 90%; max-width: 550px; border-top: 5px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div id="identificacao-overlay">
+        <div id="identificacao-box">
+            <h2>Bem-vindo(a) ao Painel</h2>
+            <p>Por favor, identifique-se para continuar.</p>
+            <form id="identificacao-form">
+                <div class="input-group" style="text-align: left; margin-bottom: 15px;">
+                    <label for="nome-input" style="display: block; margin-bottom: 5px; font-weight: bold;">Nome Completo</label>
+                    <input type="text" id="nome-input" required style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+                </div>
+                <div class="input-group" style="text-align: left; margin-bottom: 15px;">
+                    <label for="email-input" style="display: block; margin-bottom: 5px; font-weight: bold;">E-mail Corporativo</label>
+                    <input type="email" id="email-input" required style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+                </div>
+                <button type="submit" id="identificacao-submit" style="padding: 12px 20px; width: 100%; font-size: 16px; font-weight: bold; border: none; background-color: var(--cor-azul-medio); color: white; border-radius: 8px; cursor: pointer; margin-top: 10px;">Entrar</button>
+            </form>
+            <p id="identificacao-error" style="display:none; color: #ff4d4d; margin-top: 15px;">Acesso permitido apenas para e-mails @velotax.com.br!</p>
+        </div>
+    </div>
+    <div id="alert-overlay" class="hidden">
+        <div id="alert-box">
+            <h2>⚠️ Comunicado Importante ⚠️</h2>
+            <div id="alert-content"></div>
+            <button id="alert-close-btn">Eu li e estou Ciente</button>
+        </div>
+    </div>
+    <div class="app-wrapper">
+        <div id="sidebar" class="panel">
+            <div class="panel-header"><h2>Perguntas Frequentes</h2></div>
+            <ul id="quick-questions-list">
+                <li>Como funciona a portabilidade?</li>
+                <li>Quero fazer a exclusão da minha conta</li>
+                <li>Problema no login do app</li>
+                <li>Informação sobre os valores da restituição</li>
+            </ul>
+            <br><h4>Clique na prancheta 📋 ao lado da resposta do bot para copiar...</h4><br><br>
+            <strong>Vale lembrar que, as informações presentes aqui, são de uso interno...</strong>
+        </div>
+        <div class="chat-container panel">
+            <div class="panel-header">
+                <h2 style="text-align: center; flex-grow: 1;">Assistente de Consulta</h2>
+                <button id="theme-switcher" title="Alterar tema">☀️</button>
+            </div>
+            <div class="chat-box" id="chat-box"></div>
+            <div id="quick-actions-container">
+                <h3>Ações Rápidas</h3>
+                <div class="quick-actions-grid">
+                    <button class="quick-action">📲Portabilidade</button>
+                    <button class="quick-action">💰Juros</button>
+                    <button class="quick-action">🔐Retenção da chave pix</button>
+                    <button class="quick-action">✂Desconto proporcional</button>
+                </div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="user-input" placeholder="Digite o CPF/CNPJ para consulta...">
+            </div>
+        </div>
+        <div id="news-panel" class="panel">
+            <div class="panel-header"><h2>Notícias da Semana</h2></div>
+            <div id="news-list">
+                <div class="news-item critical-alert">
+                    <h2>Desligamos a Antecipação novamente, pessoal</h2>
+                    <small>Publicado em: 03/07/2025</small>
+                    <p>Devemos encaminhar ao N2 100% dos casos em que o cliente solicita a chave PIX antes de quitar o pagamento, mesmo explicando a regra contratual. Não retemos chaves contra a vontade do cliente.
+Reclamações no Bacen por falhas nesse processo são inaceitáveis.
+Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Dificuldades na portabilidade exigem suporte passo a passo ou acionar a equipe de Produtos para exclusão, se necessário, mais informações detalhadas estão no grupo de notícias!!                      
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const identificacaoOverlay = document.getElementById('identificacao-overlay');
+        const identificacaoForm = document.getElementById('identificacao-form');
+        const appWrapper = document.querySelector('.app-wrapper');
+
+        function verificarIdentificacao() {
+            const DOMINIO_PERMITIDO = "@velotax.com.br";
+            const umDiaEmMs = 24 * 60 * 60 * 1000;
+            let dadosSalvos = null;
+            try {
+                const dadosSalvosString = localStorage.getItem('dadosAtendenteChatbot');
+                if(dadosSalvosString) dadosSalvos = JSON.parse(dadosSalvosString);
+            } catch(e) { localStorage.removeItem('dadosAtendenteChatbot'); }
+            
+            if (!dadosSalvos || (Date.now() - dadosSalvos.timestamp > umDiaEmMs) || !dadosSalvos.email.endsWith(DOMINIO_PERMITIDO)) {
+                identificacaoOverlay.style.display = 'flex';
+                appWrapper.style.visibility = 'hidden';
+            } else {
+                identificacaoOverlay.style.display = 'none';
+                appWrapper.style.visibility = 'visible';
+                iniciarBot(dadosSalvos);
+            }
+        }
+
+        identificacaoForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const DOMINIO_PERMITIDO = "@velotax.com.br";
+            const nome = document.getElementById('nome-input').value.trim();
+            const email = document.getElementById('email-input').value.trim().toLowerCase();
+            const errorMsg = document.getElementById('identificacao-error');
+
+            if (nome && email && email.endsWith(DOMINIO_PERMITIDO)) {
+                const dadosAtendente = { nome, email, timestamp: Date.now() };
+                localStorage.setItem('dadosAtendenteChatbot', JSON.stringify(dadosAtendente));
+                identificacaoOverlay.style.display = 'none';
+                appWrapper.style.visibility = 'visible';
+                iniciarBot(dadosAtendente);
+            } else {
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        function verificarAlertasCriticos() {
+            const alertOverlay = document.getElementById('alert-overlay');
+            const alertContent = document.getElementById('alert-content');
+            const alertCloseBtn = document.getElementById('alert-close-btn');
+            const criticalAlertItem = document.querySelector('.news-item.critical-alert');
+            if (criticalAlertItem) {
+                const alertHtml = criticalAlertItem.innerHTML;
+                const foiVisto = sessionStorage.getItem('alertaVisto');
+                if (foiVisto !== alertHtml) {
+                    alertContent.innerHTML = alertHtml;
+                    alertOverlay.classList.remove('hidden');
+                }
+                alertCloseBtn.onclick = () => {
+                    alertOverlay.classList.add('hidden');
+                    sessionStorage.setItem('alertaVisto', alertHtml);
+                };
+            }
+        }
+
+        function iniciarBot(dadosAtendente) {
+            const chatBox = document.getElementById('chat-box');
+            const userInput = document.getElementById('user-input');
+            const themeSwitcher = document.getElementById('theme-switcher');
+            const body = document.body;
+
+            // Mantenha a URL que você já configurou aqui
+            const CONSULTA_API_URL = "COLE_A_URL_DO_SEU_NOVO_SCRIPT_AQUI";
+
+            function toggleLoader(show) {
+                const existingLoader = document.getElementById('loader');
+                if (show && !existingLoader) {
+                    const loaderElement = document.createElement('div');
+                    loaderElement.id = 'loader';
+                    loaderElement.classList.add('loader-container');
+                    loaderElement.innerHTML = `<div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+                    chatBox.appendChild(loaderElement);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                } else if (!show && existingLoader) {
+                    existingLoader.remove();
+                }
+            }
+            
+            function addMessage(message, sender) {
+                const messageContainer = document.createElement('div');
+                messageContainer.classList.add('message', sender === 'user' ? 'user-msg' : 'bot-msg');
+                messageContainer.innerHTML = message.replace(/\n/g, '<br>');
+                chatBox.appendChild(messageContainer);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+            
+            async function buscarDadosPorCpfCnpj(cpfCnpj) {
+                if (!cpfCnpj.trim()) return;
+                toggleLoader(true);
+                
+                if (!CONSULTA_API_URL || CONSULTA_API_URL === "COLE_A_URL_DO_SEU_NOVO_SCRIPT_AQUI") {
+                    toggleLoader(false);
+                    addMessage("ERRO DE CONFIGURAÇÃO: A URL de consulta não foi definida no código.", 'bot');
+                    return;
+                }
+
+                try {
+                    const url = `${CONSULTA_API_URL}?cpf=${encodeURIComponent(cpfCnpj)}`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Erro de rede! Status: ${response.status}`);
+                    const data = await response.json();
+                    toggleLoader(false);
+                    
+                    if (data.status === 'sucesso') {
+                        let resultadoHtml = '<strong>✅ Dados Encontrados:</strong><br><br>';
+                        for (const [chave, valor] of Object.entries(data.dados)) {
+                            resultadoHtml += `<b>${chave}:</b> ${valor || 'Não informado'}<br>`;
+                        }
+                        addMessage(resultadoHtml, 'bot');
+
+                    } else {
+                        addMessage(`⚠️ ${data.mensagem}`, 'bot');
+                    }
+                } catch (error) {
+                    toggleLoader(false);
+                    console.error("Erro ao buscar dados:", error);
+                    addMessage("Erro de conexão com o sistema de consulta. Verifique o console (F12).", 'bot');
+                }
+            }
+
+            function handleBusca(texto) {
+                if (!texto || !texto.trim()) return;
+                addMessage(texto, 'user');
+                buscarDadosPorCpfCnpj(texto);
+                if (userInput) userInput.value = '';
+            }
+
+            userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); handleBusca(userInput.value); }
+            });
+            
+            document.getElementById('sidebar').addEventListener('click', (e) => {
+                if (e.target && e.target.tagName === 'LI') {
+                    console.log("Pergunta rápida clicada:", e.target.innerText);
+                }
+            });
+            
+            document.querySelector('#quick-actions-container .quick-actions-grid').addEventListener('click', (e) => {
+                 if (e.target && e.target.classList.contains('quick-action')) {
+                    console.log("Ação rápida clicada:", e.target.innerText);
+                 }
+            });
+
+            themeSwitcher.addEventListener('click', () => {
+                body.classList.toggle('dark-theme');
+                const isDark = body.classList.contains('dark-theme');
+                themeSwitcher.innerHTML = isDark ? '🌙' : '☀️';
+                localStorage.setItem('theme', isDark ? 'dark-theme' : 'light-theme');
+            });
+            
+            function setInitialTheme() {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark-theme') {
+                    body.classList.add('dark-theme');
+                    themeSwitcher.innerHTML = '🌙';
+                } else {
+                    body.classList.remove('dark-theme');
+                    themeSwitcher.innerHTML = '☀️';
+                }
+            }
+            
+            const primeiroNome = dadosAtendente.nome.split(' ')[0];
+            const hora = new Date().getHours();
+            let saudacao = (hora >= 5 && hora < 12) ? 'Bom dia' : (hora >= 12 && hora < 18) ? 'Boa tarde' : 'Boa noite';
+            addMessage(`${saudacao}, ${primeiroNome}! Bem-vindo(a) ao painel de consulta. Digite um CPF/CNPJ abaixo para começar.`, 'bot');
+            
+            setInitialTheme();
+            verificarAlertasCriticos();
+        }
+
+        verificarIdentificacao();
+    });
+    </script>
+</body>
+</html>
