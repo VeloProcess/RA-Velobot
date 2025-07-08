@@ -116,7 +116,6 @@
             position: relative; margin-bottom: 15px; padding: 12px 16px;
             border-radius: 18px; max-width: 85%; word-wrap: break-word;
         }
-        /* MUDANÇA AQUI: Balão do usuário agora usa a variável de azul */
         .user-msg {
             background: var(--cor-azul-medio);
             color: #FFFFFF; margin-left: auto;
@@ -154,30 +153,37 @@
             30% { transform: translateY(-6px); }
         }
         .copy-btn {
-            position: absolute; top: 5px; right: -35px; background: transparent;
-            border: none; cursor: pointer; font-size: 18px;
-            color: var(--cor-texto-principal); opacity: 0.3; transition: opacity 0.2s ease;
+            position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.1);
+            border: none; cursor: pointer; font-size: 16px;
+            color: var(--cor-texto-principal); opacity: 0.3; transition: all 0.2s ease;
+            width: 30px; height: 30px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
         }
         .bot-msg:hover .copy-btn { opacity: 1; }
-        .suggestion-buttons-container {
-            display: flex; flex-direction: column; align-items: flex-start;
-            gap: 8px; margin-top: 8px; margin-bottom: 10px; padding-left: 20px;
+        .copy-btn:active { transform: scale(0.9); }
+        
+        /* ### NOVOS ESTILOS PARA A RESPOSTA FORMATADA ### */
+        .bot-msg .response-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0 0;
         }
-        .suggestion-btn {
-            background-color: #ffffff; border: 1px solid var(--cor-azul-medio);
-            color: var(--cor-azul-medio); padding: 8px 12px; border-radius: 20px;
-            cursor: pointer; font-weight: bold; font-size: 14px;
+        .bot-msg .response-list li {
+            padding: 6px 0;
+            border-bottom: 1px solid var(--cor-borda);
+            font-size: 14px;
         }
-        .feedback-container {
-            display: flex; justify-content: flex-end; align-items: center;
-            gap: 8px; margin-top: 10px;
+        .bot-msg .response-list li:last-child {
+            border-bottom: none;
         }
-        .feedback-btn {
-            background: transparent; border: none; font-size: 18px;
-            cursor: pointer; opacity: 0.6; transition: opacity 0.2s;
+        .bot-msg .response-list li strong {
+            color: var(--cor-verde-escuro);
         }
-        .feedback-btn:hover { opacity: 1; }
-        .feedback-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        body.dark-theme .bot-msg .response-list li strong {
+             color: var(--cor-verde-principal);
+        }
+        /* ### FIM DOS NOVOS ESTILOS ### */
+
         #identificacao-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 50, 100, 0.85); display: flex; justify-content: center;
@@ -258,7 +264,7 @@
                     <small>Publicado em: 03/07/2025</small>
                     <p>Devemos encaminhar ao N2 100% dos casos em que o cliente solicita a chave PIX antes de quitar o pagamento, mesmo explicando a regra contratual. Não retemos chaves contra a vontade do cliente.
 Reclamações no Bacen por falhas nesse processo são inaceitáveis.
-Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Dificuldades na portabilidade exigem suporte passo a passo ou acionar a equipe de Produtos para exclusão, se necessário, mais informações detalhadas estão no grupo de notícias!!                      
+Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Dificuldades na portabilidade exigem suporte passo a passo ou acionar a equipe de Produtos para exclusão, se necessário, mais informações detalhadas estão no grupo de notícias!!                        
                     </p>
                 </div>
             </div>
@@ -333,7 +339,6 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
             const themeSwitcher = document.getElementById('theme-switcher');
             const body = document.body;
 
-            // Mantenha a URL que você já configurou aqui
             const CONSULTA_API_URL = "https://script.google.com/macros/s/AKfycbz_-kuhCawDMkJ88KDvXGpHuP9a4y1XrazSxIcStCwwoRb7KhE__P9eH9p7mBK7RzP5/exec";
 
             function toggleLoader(show) {
@@ -353,7 +358,14 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
             function addMessage(message, sender) {
                 const messageContainer = document.createElement('div');
                 messageContainer.classList.add('message', sender === 'user' ? 'user-msg' : 'bot-msg');
-                messageContainer.innerHTML = message.replace(/\n/g, '<br>');
+                
+                // Adiciona o botão de copiar apenas para mensagens do bot que são bem-sucedidas
+                if (sender === 'bot' && message.includes('response-list')) {
+                    messageContainer.innerHTML = message + '<button class="copy-btn" title="Copiar resposta">📋</button>';
+                } else {
+                    messageContainer.innerHTML = message.replace(/\n/g, '<br>');
+                }
+
                 chatBox.appendChild(messageContainer);
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
@@ -362,7 +374,7 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
                 if (!cpfCnpj.trim()) return;
                 toggleLoader(true);
                 
-                if (!CONSULTA_API_URL || CONSULTA_API_URL === "COLE_A_URL_DO_SEU_NOVO_SCRIPT_AQUI") {
+                if (!CONSULTA_API_URL || CONSULTA_API_URL.includes("COLE_A_URL")) {
                     toggleLoader(false);
                     addMessage("ERRO DE CONFIGURAÇÃO: A URL de consulta não foi definida no código.", 'bot');
                     return;
@@ -375,15 +387,39 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
                     const data = await response.json();
                     toggleLoader(false);
                     
-                    if (data.status === 'sucesso') {
-                        let resultadoHtml = '<strong>✅ Dados Encontrados:</strong><br><br>';
-                        for (const [chave, valor] of Object.entries(data.dados)) {
-                            resultadoHtml += `<b>${chave}:</b> ${valor || 'Não informado'}<br>`;
-                        }
+                    if (data.status === 'sucesso' && data.dados) {
+                        // ### INÍCIO DA MUDANÇA NA FORMATAÇÃO ###
+                        const camposParaExibir = [
+                            { rotulo: 'Id', chaveApi: 'Id' }, { rotulo: 'HugMe', chaveApi: 'HugMe' },
+                            { rotulo: 'Origem Id', chaveApi: 'OrigemId' }, { rotulo: 'Origem', chaveApi: 'Origem' },
+                            { rotulo: 'Data Reclamação', chaveApi: 'Data Reclamação' }, { rotulo: 'Status', chaveApi: 'Status' },
+                            { rotulo: 'Hugme Status', chaveApi: 'HugmeStatus' }, { rotulo: 'RA', chaveApi: 'RA' },
+                            { rotulo: 'Nome', chaveApi: 'Nome' }, { rotulo: 'CPF/CNPJ', chaveApi: 'CPF/CNPJ' },
+                            { rotulo: 'Seu problema foi resolvido?', chaveApi: 'Seu problema foi resolvido?' },
+                            { rotulo: 'Voltaria a fazer negócio?', chaveApi: 'Voltaria a fazer negócio?' }, { rotulo: 'Nota', chaveApi: 'Nota' },
+                            { rotulo: 'Moderações neste ticket', chaveApi: 'Moderações neste ticket' },
+                            { rotulo: 'Data de Desativação RA', chaveApi: 'Data de Desativação RA' },
+                            { rotulo: 'Motivo de Desativação RA', chaveApi: 'Motivo de Desativação RA' },
+                            { rotulo: 'Avaliações desconsideradas RA', chaveApi: 'Avaliações desconsideradas RA' },
+                            { rotulo: 'Moderação status', chaveApi: 'Moderação status' }, { rotulo: 'Data Avaliacao', chaveApi: 'Data Avaliacao' }
+                        ];
+
+                        let listaHtml = '<ul class="response-list">';
+                        camposParaExibir.forEach(campo => {
+                            const valor = data.dados[campo.chaveApi];
+                            // Adiciona o item na lista apenas se o valor existir
+                            if (valor !== undefined && valor !== null && valor !== '') {
+                                listaHtml += `<li><strong>${campo.rotulo}:</strong> ${valor}</li>`;
+                            }
+                        });
+                        listaHtml += '</ul>';
+
+                        const resultadoHtml = `<strong>✅ Dados da Reclamação Encontrados:</strong>${listaHtml}`;
                         addMessage(resultadoHtml, 'bot');
+                        // ### FIM DA MUDANÇA NA FORMATAÇÃO ###
 
                     } else {
-                        addMessage(`⚠️ ${data.mensagem}`, 'bot');
+                        addMessage(`⚠️ ${data.mensagem || 'Nenhum dado encontrado para o documento informado.'}`, 'bot');
                     }
                 } catch (error) {
                     toggleLoader(false);
@@ -403,16 +439,30 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
                 if (e.key === 'Enter') { e.preventDefault(); handleBusca(userInput.value); }
             });
             
-            document.getElementById('sidebar').addEventListener('click', (e) => {
-                if (e.target && e.target.tagName === 'LI') {
-                    console.log("Pergunta rápida clicada:", e.target.innerText);
+            chatBox.addEventListener('click', (e) => {
+                if (e.target && e.target.classList.contains('copy-btn')) {
+                    const botMsgElement = e.target.closest('.bot-msg');
+                    if (botMsgElement) {
+                        // Pega os itens da lista para formatar o texto a ser copiado
+                        const listItems = botMsgElement.querySelectorAll('.response-list li');
+                        let textToCopy = '';
+                        listItems.forEach(item => {
+                            textToCopy += item.innerText.replace(':', ': ') + '\n';
+                        });
+
+                        // Usa um textarea temporário para copiar o texto
+                        const tempTextArea = document.createElement('textarea');
+                        tempTextArea.value = textToCopy.trim();
+                        document.body.appendChild(tempTextArea);
+                        tempTextArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempTextArea);
+
+                        // Feedback visual para o usuário
+                        e.target.innerText = '✅';
+                        setTimeout(() => { e.target.innerText = '📋'; }, 1500);
+                    }
                 }
-            });
-            
-            document.querySelector('#quick-actions-container .quick-actions-grid').addEventListener('click', (e) => {
-                 if (e.target && e.target.classList.contains('quick-action')) {
-                    console.log("Ação rápida clicada:", e.target.innerText);
-                 }
             });
 
             themeSwitcher.addEventListener('click', () => {
