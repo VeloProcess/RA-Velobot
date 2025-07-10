@@ -54,12 +54,25 @@
         /* ================================================================== */
         /* ### NOVAS CORES (TEMA RECLAME AQUI) - FIM ### */
         /* ================================================================== */
-
-        body {
-            font-family: 'Arial', sans-serif; background: var(--cor-fundo); color: var(--cor-texto-principal);
-            display: flex; justify-content: center; align-items: center;
-            height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;
+body {
+            font-family: 'Arial', sans-serif;
+            color: var(--cor-texto-principal);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
             transition: background-color 0.3s, color 0.3s;
+
+            /* ===== ADICIONE AS LINHAS ABAIXO ===== */
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://github.com/VeloProcess/RA-Velobot/blob/main/Reclame-Aqui.png?raw=true');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* ===== FIM DAS LINHAS A ADICIONAR ===== */
         }
         .app-wrapper {
             display: grid; grid-template-columns: 300px 1fr 300px; width: 100%;
@@ -359,8 +372,7 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
                 const messageContainer = document.createElement('div');
                 messageContainer.classList.add('message', sender === 'user' ? 'user-msg' : 'bot-msg');
                 
-                // Adiciona o botão de copiar apenas para mensagens do bot que são bem-sucedidas
-                if (sender === 'bot' && message.includes('response-list')) {
+                if (sender === 'bot' && (message.includes('response-list') || message.includes('Ocorrência'))) {
                     messageContainer.innerHTML = message + '<button class="copy-btn" title="Copiar resposta">📋</button>';
                 } else {
                     messageContainer.innerHTML = message.replace(/\n/g, '<br>');
@@ -387,36 +399,47 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
                     const data = await response.json();
                     toggleLoader(false);
                     
-                    if (data.status === 'sucesso' && data.dados) {
-                        // ### INÍCIO DA MUDANÇA NA FORMATAÇÃO ###
-                        const camposParaExibir = [
-                            { rotulo: 'Id', chaveApi: 'Id' }, { rotulo: 'HugMe', chaveApi: 'HugMe' },
-                            { rotulo: 'Origem Id', chaveApi: 'OrigemId' }, { rotulo: 'Origem', chaveApi: 'Origem' },
-                            { rotulo: 'Data Reclamação', chaveApi: 'Data Reclamação' }, { rotulo: 'Status', chaveApi: 'Status' },
-                            { rotulo: 'Hugme Status', chaveApi: 'HugmeStatus' }, { rotulo: 'RA', chaveApi: 'RA' },
-                            { rotulo: 'Nome', chaveApi: 'Nome' }, { rotulo: 'CPF/CNPJ', chaveApi: 'CPF/CNPJ' },
-                            { rotulo: 'Seu problema foi resolvido?', chaveApi: 'Seu problema foi resolvido?' },
-                            { rotulo: 'Voltaria a fazer negócio?', chaveApi: 'Voltaria a fazer negócio?' }, { rotulo: 'Nota', chaveApi: 'Nota' },
-                            { rotulo: 'Moderações neste ticket', chaveApi: 'Moderações neste ticket' },
-                            { rotulo: 'Data de Desativação RA', chaveApi: 'Data de Desativação RA' },
-                            { rotulo: 'Motivo de Desativação RA', chaveApi: 'Motivo de Desativação RA' },
-                            { rotulo: 'Avaliações desconsideradas RA', chaveApi: 'Avaliações desconsideradas RA' },
-                            { rotulo: 'Moderação status', chaveApi: 'Moderação status' }, { rotulo: 'Data Avaliacao', chaveApi: 'Data Avaliacao' }
-                        ];
+                    if (data.status === 'sucesso' && data.dados && data.dados.length > 0) {
+                        let resultadoFinalHtml = `<strong>✅ ${data.dados.length} resultado(s) encontrado(s) para o documento:</strong>`;
 
-                        let listaHtml = '<ul class="response-list">';
-                        camposParaExibir.forEach(campo => {
-                            const valor = data.dados[campo.chaveApi];
-                            // Adiciona o item na lista apenas se o valor existir
-                            if (valor !== undefined && valor !== null && valor !== '') {
-                                listaHtml += `<li><strong>${campo.rotulo}:</strong> ${valor}</li>`;
-                            }
+                        data.dados.forEach((ocorrencia, index) => {
+                            resultadoFinalHtml += `<hr style="border-top: 1px solid var(--cor-borda); margin: 20px 0;"><h4>Ocorrência ${index + 1}</h4>`;
+
+                            // ### INÍCIO DA ALTERAÇÃO DOS CAMPOS ###
+                            const camposParaExibir = [
+                                { rotulo: 'Id HugMe', chaveApi: 'Id HugMe' },
+                                { rotulo: 'Origem', chaveApi: 'Origem' },
+                                { rotulo: 'Id Origem', chaveApi: 'Id Origem' },
+                                { rotulo: 'Data Reclamação', chaveApi: 'Data Reclamação' },
+                                { rotulo: 'Status Hugme', chaveApi: 'Status Hugme' },
+                                { rotulo: 'Status RA', chaveApi: 'Status RA' },
+                                { rotulo: 'Nome', chaveApi: 'nome' },
+                                { rotulo: 'CPF/CNPJ', chaveApi: 'CPF/CNPJ' },
+                                { rotulo: 'Seu problema foi resolvido?', chaveApi: 'Seu problema foi resolvido?' },
+                                { rotulo: 'Voltaria a fazer negócio?', chaveApi: 'Voltaria a fazer negócio?' },
+                                { rotulo: 'Nota', chaveApi: 'Nota' },
+                                { rotulo: 'Moderações neste ticket', chaveApi: 'Moderações neste ticket' },
+                                { rotulo: 'Data de Desativação RA', chaveApi: 'Data de Desativação RA' },
+                                { rotulo: 'Motivo de Desativação RA', chaveApi: 'Motivo de Desativação RA' },
+                                { rotulo: 'Avaliações desconsideradas RA', chaveApi: 'Avaliações desconsideradas RA' },
+                                { rotulo: 'Moderação status', chaveApi: 'Moderação status' },
+                                { rotulo: 'Data Avaliacao', chaveApi: 'Data Avaliacao' }
+                            ];
+                            // ### FIM DA ALTERAÇÃO DOS CAMPOS ###
+
+                            let listaHtml = '<ul class="response-list">';
+                            camposParaExibir.forEach(campo => {
+                                const valor = ocorrencia[campo.chaveApi];
+                                if (valor !== undefined && valor !== null && valor !== '') {
+                                    listaHtml += `<li><strong>${campo.rotulo}:</strong> ${valor}</li>`;
+                                }
+                            });
+                            listaHtml += '</ul>';
+                            
+                            resultadoFinalHtml += listaHtml;
                         });
-                        listaHtml += '</ul>';
-
-                        const resultadoHtml = `<strong>✅ Dados da Reclamação Encontrados:</strong>${listaHtml}`;
-                        addMessage(resultadoHtml, 'bot');
-                        // ### FIM DA MUDANÇA NA FORMATAÇÃO ###
+                        
+                        addMessage(resultadoFinalHtml, 'bot');
 
                     } else {
                         addMessage(`⚠️ ${data.mensagem || 'Nenhum dado encontrado para o documento informado.'}`, 'bot');
@@ -443,14 +466,21 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
                 if (e.target && e.target.classList.contains('copy-btn')) {
                     const botMsgElement = e.target.closest('.bot-msg');
                     if (botMsgElement) {
-                        // Pega os itens da lista para formatar o texto a ser copiado
-                        const listItems = botMsgElement.querySelectorAll('.response-list li');
+                        const titulos = botMsgElement.querySelectorAll('h4');
+                        const listas = botMsgElement.querySelectorAll('.response-list');
                         let textToCopy = '';
-                        listItems.forEach(item => {
-                            textToCopy += item.innerText.replace(':', ': ') + '\n';
+
+                        listas.forEach((lista, index) => {
+                            if (titulos[index]) {
+                                textToCopy += titulos[index].innerText.trim() + '\n------------------------\n';
+                            }
+                            const listItems = lista.querySelectorAll('li');
+                            listItems.forEach(item => {
+                                textToCopy += item.innerText.replace(':', ': ') + '\n';
+                            });
+                            textToCopy += '\n'; 
                         });
 
-                        // Usa um textarea temporário para copiar o texto
                         const tempTextArea = document.createElement('textarea');
                         tempTextArea.value = textToCopy.trim();
                         document.body.appendChild(tempTextArea);
@@ -458,7 +488,6 @@ Se o cliente já pagou ou não contratou, resolvemos internamente (sem N2). Difi
                         document.execCommand('copy');
                         document.body.removeChild(tempTextArea);
 
-                        // Feedback visual para o usuário
                         e.target.innerText = '✅';
                         setTimeout(() => { e.target.innerText = '📋'; }, 1500);
                     }
